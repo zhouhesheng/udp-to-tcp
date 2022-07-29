@@ -22,7 +22,10 @@ func main() {
 		return
 	}
 
-	if os.Args[1] == "client" {
+	mode := os.Args[1]
+	os.Args = os.Args[1:]
+
+	if mode == "client" {
 		log.Println("Starting in client mode")
 		client.InitClient(ctx)
 	} else {
