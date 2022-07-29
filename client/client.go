@@ -12,6 +12,7 @@ import (
 func InitClient(ctx context.Context) error {
 	address := flag.String("l", ":1981", "Address to listen on")
 	forward_to := flag.String("h", ":8080", "Remote address")
+	server_name := flag.String("name", "example.com", "SNI")
 
 	flag.Parse()
 
@@ -22,10 +23,10 @@ func InitClient(ctx context.Context) error {
 		return err
 	}
 
-	return HandleTCP(listener, ctx, *forward_to)
+	return HandleTCP(listener, ctx, *forward_to, *server_name)
 }
 
-func HandleTCP(listener net.Listener, ctx context.Context, forward_to string) error {
+func HandleTCP(listener net.Listener, ctx context.Context, forward_to string, server_name string) error {
 	go func() {
 		// Clean up when context is canceled is done
 		<-ctx.Done()
@@ -41,12 +42,12 @@ func HandleTCP(listener net.Listener, ctx context.Context, forward_to string) er
 
 		log.Println("connection accepted")
 
-		go HandleTCPConn(conn, forward_to)
+		go HandleTCPConn(conn, forward_to, server_name)
 	}
 }
 
-func HandleTCPConn(src net.Conn, dest string) {
-	dst, err := tls.Dial("tcp", dest, &tls.Config{InsecureSkipVerify: true})
+func HandleTCPConn(src net.Conn, dest string, server_name string) {
+	dst, err := tls.Dial("tcp", dest, &tls.Config{InsecureSkipVerify: true, ServerName: server_name})
 	if err != nil {
 		log.Println("Dial Error:" + err.Error())
 		return
