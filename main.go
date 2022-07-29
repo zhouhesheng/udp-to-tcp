@@ -23,8 +23,10 @@ func main() {
 	}
 
 	if os.Args[1] == "client" {
+		log.Println("Starting in client mode")
 		client.InitClient(ctx)
 	} else {
+		log.Println("Starting in server mode")
 		server.InitServer(ctx)
 	}
 }
