@@ -26,7 +26,7 @@ func InitClient(ctx context.Context) error {
 			return err
 		}
 
-		conn, err := net.ListenUDP("udp4", addr)
+		conn, err := net.ListenUDP("udp", addr)
 
 		if err != nil {
 			log.Printf("Failed to listen on %s, \n%+v\n", *port, err)

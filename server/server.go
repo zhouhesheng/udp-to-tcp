@@ -32,7 +32,7 @@ func InitServer(ctx context.Context) error {
 	}
 
 	if *is_udp {
-		addr, err := net.ResolveUDPAddr("udp4", *forward_to)
+		addr, err := net.ResolveUDPAddr("udp", *forward_to)
 
 		if err != nil {
 			log.Fatal("Wrong UDP address", err.Error())
@@ -99,9 +99,8 @@ func HandleTCPConn(src net.Conn, dest string) {
 }
 
 func HandleUDPConnection(src net.Conn, dest string) {
-	addr, _ := net.ResolveUDPAddr("udp4", dest)
 redial:
-	dst, err := net.DialUDP("udp4", nil, addr)
+	dst, err := net.Dial("udp", dest)
 
 	if err != nil {
 		log.Println("Dial Error:" + err.Error())
