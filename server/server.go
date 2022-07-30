@@ -7,11 +7,13 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 )
 
 func InitServer(ctx context.Context) error {
 	address := flag.String("l", ":8080", "Address to listen on")
 	forward_to := flag.String("f", ":1985", "Forward address")
+	is_udp := flag.Bool("u", false, "If the remote forwarded port is UDP set this")
 
 	flag.Parse()
 
@@ -29,10 +31,20 @@ func InitServer(ctx context.Context) error {
 		log.Fatal("Can't listen on port specified.", err.Error())
 	}
 
-	return HandleTCP(listener, ctx, *forward_to)
+	if *is_udp {
+		addr, err := net.ResolveUDPAddr("udp4", *forward_to)
+
+		if err != nil {
+			log.Fatal("Wrong UDP address", err.Error())
+		}
+
+		*forward_to = addr.String()
+	}
+
+	return HandleTCP(listener, ctx, *forward_to, *is_udp)
 }
 
-func HandleTCP(listener net.Listener, ctx context.Context, forward_to string) error {
+func HandleTCP(listener net.Listener, ctx context.Context, forward_to string, is_udp bool) error {
 	for {
 		go func() {
 			// Clean up when context is canceled is done
@@ -49,6 +61,11 @@ func HandleTCP(listener net.Listener, ctx context.Context, forward_to string) er
 
 			log.Println("connection accepted")
 
+			if is_udp {
+				go HandleUDPConnection(conn, forward_to)
+				continue
+			}
+
 			go HandleTCPConn(conn, forward_to)
 		}
 	}
@@ -59,6 +76,37 @@ func HandleTCPConn(src net.Conn, dest string) {
 	if err != nil {
 		log.Println("Dial Error:" + err.Error())
 		return
+	}
+
+	done := make(chan struct{})
+
+	go func() {
+		defer src.Close()
+		defer dst.Close()
+		io.Copy(dst, src)
+		done <- struct{}{}
+	}()
+
+	go func() {
+		defer src.Close()
+		defer dst.Close()
+		io.Copy(src, dst)
+		done <- struct{}{}
+	}()
+
+	<-done
+	<-done
+}
+
+func HandleUDPConnection(src net.Conn, dest string) {
+	addr, _ := net.ResolveUDPAddr("udp4", dest)
+redial:
+	dst, err := net.DialUDP("udp4", nil, addr)
+
+	if err != nil {
+		log.Println("Dial Error:" + err.Error())
+		time.Sleep(time.Millisecond * 200)
+		goto redial
 	}
 
 	done := make(chan struct{})
