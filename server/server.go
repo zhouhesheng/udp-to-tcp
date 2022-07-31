@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"time"
 )
 
 func InitServer(ctx context.Context) error {
@@ -99,13 +98,11 @@ func HandleTCPConn(src net.Conn, dest string) {
 }
 
 func HandleUDPConnection(src net.Conn, dest string) {
-redial:
 	dst, err := net.Dial("udp", dest)
 
 	if err != nil {
 		log.Println("Dial Error:" + err.Error())
-		time.Sleep(time.Millisecond * 200)
-		goto redial
+		return
 	}
 
 	done := make(chan struct{})
@@ -126,4 +123,5 @@ redial:
 
 	<-done
 	<-done
+
 }
