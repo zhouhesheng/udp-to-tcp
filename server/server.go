@@ -98,7 +98,14 @@ func HandleTCPConn(src net.Conn, dest string) {
 }
 
 func HandleUDPConnection(src net.Conn, dest string) {
-	dst, err := net.Dial("udp", dest)
+	addr, err := net.ResolveUDPAddr("udp", dest)
+
+	if err != nil {
+		log.Println("Resolve Error:" + err.Error())
+		return
+	}
+
+	dst, err := net.DialUDP("udp", nil, addr)
 
 	if err != nil {
 		log.Println("Dial Error:" + err.Error())
