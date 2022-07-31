@@ -108,14 +108,49 @@ redial:
 	go func() {
 		defer src.Close()
 		defer dst.Close()
-		io.Copy(dst, src)
+
+		buf := make([]byte, 65507)
+
+		for {
+			n, addr, err := src.ReadFromUDP(buf)
+			log.Println(addr)
+
+			if err != nil {
+				log.Println("119", err)
+				break
+			}
+
+			if _, err := dst.Write(buf[:n]); err != nil {
+				log.Println(err)
+				break
+			}
+		}
+
 		done <- struct{}{}
 	}()
 
 	go func() {
 		defer src.Close()
 		defer dst.Close()
-		io.Copy(src, dst)
+
+		buf := make([]byte, 65507)
+
+		for {
+			n, err := dst.Read(buf)
+
+			log.Print(n)
+			if err != nil {
+				log.Println("142", err)
+				break
+			}
+
+			_, err2 := src.WriteTo(buf[:n], src.LocalAddr())
+
+			if err2 != nil {
+				log.Println(err)
+				break
+			}
+		}
 		done <- struct{}{}
 	}()
 

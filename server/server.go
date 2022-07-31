@@ -117,14 +117,48 @@ func HandleUDPConnection(src net.Conn, dest string) {
 	go func() {
 		defer src.Close()
 		defer dst.Close()
-		io.Copy(dst, src)
+
+		buf := make([]byte, 65507)
+
+		for {
+			n, addr, err := dst.ReadFromUDP(buf)
+			log.Println(addr)
+
+			if err != nil {
+				log.Println(err)
+				break
+			}
+
+			if _, err := src.Write(buf[:n]); err != nil {
+				log.Println(err)
+				break
+			}
+		}
+
 		done <- struct{}{}
 	}()
 
 	go func() {
 		defer src.Close()
 		defer dst.Close()
-		io.Copy(src, dst)
+
+		buf := make([]byte, 65507)
+
+		for {
+			n, err := src.Read(buf)
+
+			if err != nil {
+				log.Println(err)
+				break
+			}
+
+			_, err2 := dst.WriteTo(buf[:n], addr)
+
+			if err2 != nil {
+				log.Println(err)
+				break
+			}
+		}
 		done <- struct{}{}
 	}()
 
