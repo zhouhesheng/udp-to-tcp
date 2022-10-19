@@ -94,6 +94,8 @@ func HandleTCPConn(src net.Conn, dest string, server_name string) {
 	<-done
 }
 
+var UdpLocalAddr *net.UDPAddr = nil
+
 func HandleUDPConn(src *net.UDPConn, ctx context.Context, remote string, server_name string) error {
 	addr, err := net.ResolveTCPAddr("tcp", remote)
 	if err != nil {
@@ -125,6 +127,7 @@ redial:
 		for {
 			n, addr, err := src.ReadFromUDP(buf)
 			log.Println("read udp from addr", addr, n)
+			UdpLocalAddr = addr
 
 			if err != nil {
 				log.Println("read udp err", err)
@@ -155,10 +158,10 @@ redial:
 				break
 			}
 
-			_, err2 := src.WriteTo(buf[:n], src.LocalAddr())
+			m, err2 := src.WriteTo(buf[0:n], UdpLocalAddr)
+			log.Println("write back err", err, m)
 
 			if err2 != nil {
-				log.Println("write src err", err)
 				break
 			}
 		}

@@ -10,7 +10,7 @@ import (
 
 func InitServer(ctx context.Context) error {
 	address := flag.String("l", ":9999", "Address to listen on")
-	forward_to := flag.String("f", ":53", "Forward address")
+	forward_to := flag.String("f", "1.1.1.1:53", "Forward address")
 	is_udp := flag.Bool("u", true, "If the remote forwarded port is UDP set this")
 
 	flag.Parse()
@@ -122,9 +122,7 @@ func HandleUDPConnection(src net.Conn, dest string) {
 		buf := make([]byte, 65535)
 
 		for {
-			n, addr, err := dst.ReadFromUDP(buf)
-			log.Println("read udp addr", addr, n)
-
+			n, err := dst.Read(buf)
 			if err != nil {
 				log.Println("read udp error", err)
 				break
@@ -135,7 +133,6 @@ func HandleUDPConnection(src net.Conn, dest string) {
 				break
 			}
 		}
-
 		done <- struct{}{}
 	}()
 
@@ -143,7 +140,7 @@ func HandleUDPConnection(src net.Conn, dest string) {
 		defer src.Close()
 		defer dst.Close()
 
-		buf := make([]byte, 65507)
+		buf := make([]byte, 65535)
 
 		for {
 			n, err := src.Read(buf)
@@ -151,15 +148,13 @@ func HandleUDPConnection(src net.Conn, dest string) {
 
 			if err != nil {
 				log.Println("read tcp error", err)
-				log.Println(err)
 				break
 			}
 
-			_, err2 := dst.WriteTo(buf[:n], addr)
-
+			m, err2 := dst.Write(buf[0:n])
+			log.Println("write dst ", addr, m)
 			if err2 != nil {
-				log.Println("write dst error", err)
-				log.Println(err)
+				log.Println("write dst error=", err)
 				break
 			}
 		}
