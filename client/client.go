@@ -122,7 +122,7 @@ redial:
 		defer src.Close()
 		defer dst.Close()
 
-		buf := make([]byte, 65507)
+		buf := make([]byte, 65535)
 
 		for {
 			n, addr, err := src.ReadFromUDP(buf)
