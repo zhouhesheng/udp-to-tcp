@@ -55,6 +55,7 @@ func HandleTCP(listener net.Listener, ctx context.Context, forward_to string, is
 			conn, err := listener.Accept()
 
 			if err != nil {
+				log.Println("HandleTCP err", err)
 				return err
 			}
 
@@ -118,19 +119,19 @@ func HandleUDPConnection(src net.Conn, dest string) {
 		defer src.Close()
 		defer dst.Close()
 
-		buf := make([]byte, 65507)
+		buf := make([]byte, 65535)
 
 		for {
 			n, addr, err := dst.ReadFromUDP(buf)
-			log.Println(addr)
+			log.Println("read udp addr", addr, n)
 
 			if err != nil {
-				log.Println(err)
+				log.Println("read udp error", err)
 				break
 			}
 
 			if _, err := src.Write(buf[:n]); err != nil {
-				log.Println(err)
+				log.Println("write tcp error", err)
 				break
 			}
 		}
@@ -146,8 +147,10 @@ func HandleUDPConnection(src net.Conn, dest string) {
 
 		for {
 			n, err := src.Read(buf)
+			log.Println("read tcp n=", n)
 
 			if err != nil {
+				log.Println("read tcp error", err)
 				log.Println(err)
 				break
 			}
@@ -155,6 +158,7 @@ func HandleUDPConnection(src net.Conn, dest string) {
 			_, err2 := dst.WriteTo(buf[:n], addr)
 
 			if err2 != nil {
+				log.Println("write dst error", err)
 				log.Println(err)
 				break
 			}

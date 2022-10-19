@@ -57,6 +57,7 @@ func HandleTCP(listener net.Listener, ctx context.Context, remote string, server
 		conn, err := listener.Accept()
 
 		if err != nil {
+			log.Println("HandleTCP err", err)
 			return err
 		}
 
@@ -113,15 +114,15 @@ redial:
 
 		for {
 			n, addr, err := src.ReadFromUDP(buf)
-			log.Println(addr)
+			log.Println("read udp from addr", addr, n)
 
 			if err != nil {
-				log.Println("119", err)
+				log.Println("read udp err", err)
 				break
 			}
 
 			if _, err := dst.Write(buf[:n]); err != nil {
-				log.Println(err)
+				log.Println("write dst err", err)
 				break
 			}
 		}
@@ -133,21 +134,21 @@ redial:
 		defer src.Close()
 		defer dst.Close()
 
-		buf := make([]byte, 65507)
+		buf := make([]byte, 65535)
 
 		for {
 			n, err := dst.Read(buf)
 
-			log.Print(n)
+			log.Print("read dest n=", n)
 			if err != nil {
-				log.Println("142", err)
+				log.Println("read dest err", err)
 				break
 			}
 
 			_, err2 := src.WriteTo(buf[:n], src.LocalAddr())
 
 			if err2 != nil {
-				log.Println(err)
+				log.Println("write src err", err)
 				break
 			}
 		}
