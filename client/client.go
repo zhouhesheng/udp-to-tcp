@@ -11,10 +11,10 @@ import (
 )
 
 func InitClient(ctx context.Context) error {
-	port := flag.String("l", ":1981", "Port to listen on")
-	remote := flag.String("h", ":8080", "Remote address")
+	port := flag.String("l", ":8888", "Port to listen on")
+	remote := flag.String("h", ":9999", "Remote address")
 	server_name := flag.String("name", "example.com", "SNI")
-	is_udp := flag.Bool("u", false, "If the remote forwarded port is UDP set this")
+	is_udp := flag.Bool("u", true, "If the remote forwarded port is UDP set this")
 
 	flag.Parse()
 
