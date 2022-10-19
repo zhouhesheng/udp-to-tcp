@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"flag"
 	"io"
 	"log"
@@ -16,15 +15,12 @@ func InitServer(ctx context.Context) error {
 
 	flag.Parse()
 
-	cert, key := GenRandomCert()
-
-	tls_cert, err := tls.X509KeyPair(cert, key)
-
+	addr, err := net.ResolveTCPAddr("tcp", *address)
 	if err != nil {
-		log.Fatal("Cannot be loaded the certificate.", err.Error())
+		log.Printf("Unable to resolve IP")
 	}
 
-	listener, err := tls.Listen("tcp", *address, &tls.Config{Certificates: []tls.Certificate{tls_cert}})
+	listener, err := net.ListenTCP("tcp", addr)
 
 	if err != nil {
 		log.Fatal("Can't listen on port specified.", err.Error())
@@ -43,7 +39,7 @@ func InitServer(ctx context.Context) error {
 	return HandleTCP(listener, ctx, *forward_to, *is_udp)
 }
 
-func HandleTCP(listener net.Listener, ctx context.Context, forward_to string, is_udp bool) error {
+func HandleTCP(listener *net.TCPListener, ctx context.Context, forward_to string, is_udp bool) error {
 	for {
 		go func() {
 			// Clean up when context is canceled is done
@@ -52,7 +48,7 @@ func HandleTCP(listener net.Listener, ctx context.Context, forward_to string, is
 		}()
 
 		for {
-			conn, err := listener.Accept()
+			conn, err := listener.AcceptTCP()
 
 			if err != nil {
 				log.Println("HandleTCP err", err)
@@ -62,6 +58,10 @@ func HandleTCP(listener net.Listener, ctx context.Context, forward_to string, is
 			log.Println("connection accepted")
 
 			if is_udp {
+				err := conn.SetKeepAlive(true)
+				if err != nil {
+					log.Printf("Unable to set keepalive - %s", err)
+				}
 				go HandleUDPConnection(conn, forward_to)
 				continue
 			}

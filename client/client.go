@@ -95,13 +95,23 @@ func HandleTCPConn(src net.Conn, dest string, server_name string) {
 }
 
 func HandleUDPConn(src *net.UDPConn, ctx context.Context, remote string, server_name string) error {
+	addr, err := net.ResolveTCPAddr("tcp", remote)
+	if err != nil {
+		log.Printf("Unable to resolve IP")
+	}
+
 redial:
-	dst, err := tls.Dial("tcp", remote, &tls.Config{InsecureSkipVerify: true, ServerName: server_name})
+	dst, err := net.DialTCP("tcp", nil, addr)
 
 	if err != nil {
 		log.Println("Dial Error:" + err.Error())
 		time.Sleep(time.Millisecond * 200)
 		goto redial
+	}
+
+	err = dst.SetKeepAlive(true)
+	if err != nil {
+		log.Printf("Unable to set keepalive - %s", err)
 	}
 
 	done := make(chan struct{})
